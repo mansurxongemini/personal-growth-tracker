@@ -324,3 +324,199 @@ auth lands).
 ### Priority recommendation
 Wire NextAuth + per-user scoping next (highest architectural value), then
 add streaming responses for UX polish.
+
+---
+
+# Phase 3 — Achievements, Templates & Styling Polish
+
+## Project Status (Phase 3 — Complete)
+
+Added three major new features and comprehensive styling polish. The app now
+has a gamification layer (18 achievements), a one-click challenge templates
+library (18 pre-built challenges), a daily motivational quote widget, and
+enhanced visual polish with animated counters and skeleton loaders.
+
+All new features are **browser-verified with zero console errors**.
+
+---
+
+## Bug Fix: Native SWC Binary Missing
+
+**Problem**: Dev server crashed with
+`Error: turbo.createProject is not supported by the wasm bindings` because
+`@next/swc-linux-x64-gnu` was not installed (only the musl variant was present,
+which requires libc.musl — unavailable on Debian).
+
+**Fix**: Installed the matching native binary:
+```bash
+bun add -d @next/swc-linux-x64-gnu@16.1.3
+```
+This resolved the turbopack WASM fallback crash. Server now compiles and
+serves reliably with native SWC.
+
+---
+
+## New Feature 1: Achievements / Badges System
+
+### Lib (`src/lib/achievements.ts`)
+- 18 achievements across 6 categories (streak, checkin, completion, challenge,
+  note, special) and 4 rarity tiers (common, rare, epic, legendary).
+- `computeAchievements()` — derives all progress dynamically from existing
+  Challenge/DailyLog/Note data (no new DB table needed). Computes:
+  - Longest streak across all challenges
+  - Total check-ins, total completions, note count
+  - Perfect week (consecutive days where ALL active challenges completed)
+  - Early bird (check-in before 8AM) / Night owl (after 10PM)
+- `RARITY_STYLES` — per-rarity gradient/border/glow/text/bg classes.
+
+### API (`src/app/api/achievements/route.ts`)
+- `GET` → returns `{ achievements: AchievementProgress[], summary }` with
+  per-achievement unlocked/progress + rarity counts.
+
+### Component (`src/components/achievements-section.tsx`)
+- Dashboard widget with:
+  - Header showing unlocked/total + circular progress ring
+  - 4 rarity summary tiles (common/rare/epic/legendary) with animated counters
+  - Filter pills (All / Unlocked / Locked)
+  - Responsive badge grid (2-4 cols) with lock/unlock states, progress bars,
+    rarity labels, shine effects, hover animations
+
+### Verification
+- API returns 18 achievements, 7 unlocked for demo data.
+- Achievements section renders on dashboard with "7/18" and rarity breakdown.
+- No console errors.
+
+---
+
+## New Feature 2: Challenge Templates Library
+
+### Data (`src/lib/templates.ts`)
+- 18 pre-built challenge templates across all 7 categories:
+  - Health: Drink 2L Water, No Added Sugar, 8 Hours Sleep
+  - Fitness: 10K Steps, 50 Push-ups, Morning Run
+  - Mind: Morning Meditation, Read 20 Pages, Daily Journaling
+  - Career: 30 Days of Code, Ship Something Daily, Daily Connection
+  - Finance: No-Spend Challenge, Track Every Expense
+  - Creativity: Daily Photo, Write 500 Words, Daily Sketch
+  - Social: Daily Compliment, Call Family
+- Each template: title, description, category, duration, dailyTarget, color,
+  icon, difficulty (easy/medium/hard/extreme), tags, emoji.
+- `DIFFICULTY_STYLES` — per-difficulty color + dot count.
+
+### Component (`src/components/templates-dialog.tsx`)
+- Full-screen dialog with:
+  - Search bar (title/description/tags)
+  - Category filter pills (All + 7 categories with emojis)
+  - Responsive template card grid (1-2 cols)
+  - Each card: emoji, title, duration, difficulty dots, description, tags,
+    "Start Challenge" button (creates challenge via POST /api/challenges)
+- Header button (LayoutGrid icon, cyan, tooltip "Templates Library")
+
+### Verification
+- Dialog opens from header button, shows "Challenge Templates" + template cards.
+- Search and category filters work.
+- "Start Challenge" creates a real challenge (verified via API).
+
+---
+
+## New Feature 3: Daily Motivational Quote
+
+### Data (`src/lib/quotes.ts`)
+- 30 curated quotes from Aristotle, James Clear, Confucius, Steve Jobs, etc.
+- `getDailyQuote()` — rotates by day-of-year so all users see the same quote.
+
+### Component (`src/components/daily-quote.tsx`)
+- Dashboard widget with:
+  - Category-based gradient background (discipline=amber, growth=emerald, etc.)
+  - Decorative quote mark icon
+  - "Daily Inspiration" label with sparkle icon
+  - Large quote text + author with separator line
+  - Framer Motion entrance animation
+
+### Verification
+- Renders on dashboard next to achievements section.
+- Quote text + author visible.
+
+---
+
+## Styling Polish
+
+### Animated Counter (`src/components/animated-counter.tsx`)
+- `AnimatedCounter` — smoothly tweens numbers using Framer Motion's
+  `useMotionValue` + `animate`.
+- `AnimatedCounterInView` — counts up when scrolled into viewport via
+  `IntersectionObserver`. Used in achievements rarity tiles.
+
+### Boot Skeleton Enhancement
+- Updated `BootSkeleton` in page.tsx to match the new 2-column layout
+  (quote + achievements row) with shimmer placeholders.
+
+### Dashboard Layout
+- New 2-column row above tabs: `lg:grid-cols-[1fr_1.4fr]` with Daily Quote
+  (left) + Achievements Section (right).
+- Achievements section has decorative gradient glow, circular progress ring,
+  rarity-colored summary tiles, and badge grid with shine effects.
+
+### Store Extensions (`src/lib/store.ts`)
+- Added: `templatesOpen`, `achievements`, `achievementsSummary` + setters.
+
+---
+
+## Verification Results (Phase 3)
+
+1. **API health**: challenges:200, achievements:200, analytics:200 ✅
+2. **Achievements API**: 18 total, 7 unlocked, accurate per-achievement
+   progress (e.g., "Fortnight Fighter 13/14", "Century Club 72/100") ✅
+3. **Dashboard renders**: 6 challenge cards, "Achievements 7/18" section,
+   "Daily Inspiration" quote, Templates button in header ✅
+4. **Templates dialog**: opens from header, shows 18 templates with search +
+   category filters, "Start Challenge" creates real challenges ✅
+5. **No console errors** across all interactions ✅
+6. **Lint clean** ✅
+7. **No dev log errors** ✅
+
+---
+
+## Current Goals / Completed Modifications (Phase 3)
+
+- ✅ Fixed native SWC binary crash (installed @next/swc-linux-x64-gnu@16.1.3)
+- ✅ Achievements system (18 badges, 4 rarities, dynamic computation, dashboard
+  widget with progress rings + rarity tiles + filterable badge grid)
+- ✅ Challenge templates library (18 pre-built templates, search + category
+  filter, one-click start, header button)
+- ✅ Daily motivational quote widget (30 quotes, day-of-year rotation,
+  category-based gradients)
+- ✅ Animated counter component (Framer Motion tween + IntersectionObserver)
+- ✅ Enhanced boot skeleton (matches new 2-column layout)
+- ✅ Store extensions for templates + achievements state
+
+---
+
+## Unresolved Issues / Risks / Next-Phase Priorities
+
+### Known items
+- **Dev server reaping**: Background processes started in a Bash tool
+  invocation are reaped when that invocation ends. All cross-invocation
+  testing must be done in single combined commands. Not a code issue.
+- **Achievements not persisted**: Achievements are computed live from data.
+  If you want to track *when* an achievement was unlocked (for a
+  notification/toast), add an `AchievementUnlock` model + check-on-write.
+- **Templates are static**: No way for users to create/save custom templates
+  yet. Could add a "Save as template" option.
+
+### Recommended next-phase features
+1. **Achievement unlock notifications** — toast + confetti when an achievement
+   is newly unlocked (requires persisting unlock timestamps).
+2. **Streak freeze / second chance** — allow users to "freeze" a streak for
+   one missed day (gamification mechanic).
+3. **Weekly summary email/report** — AI-generated weekly digest.
+4. **Social sharing** — share challenge progress or achievement badges as
+   images (canvas → PNG).
+5. **Custom templates** — let users save their own challenge templates.
+6. **Leaderboard** (if auth added) — compare streaks/achievements with others.
+7. **Dark/light mode per-component** — e.g. always-dark analytics charts.
+8. **PWA support** — offline-first, push notifications for check-in reminders.
+
+### Priority recommendation
+Add achievement unlock notifications (toast + confetti) for immediate
+gamification payoff, then custom templates for personalization.

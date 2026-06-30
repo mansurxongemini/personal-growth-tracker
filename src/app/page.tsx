@@ -12,6 +12,9 @@ import { ChallengeDetailDialog } from "@/components/challenge-detail-dialog"
 import { NoteComposerDialog } from "@/components/note-composer-dialog"
 import { AiAssistantPanel } from "@/components/ai/ai-assistant-panel"
 import { AiSettingsDialog } from "@/components/ai/ai-settings-dialog"
+import { TemplatesDialog } from "@/components/templates-dialog"
+import { AchievementsSection } from "@/components/achievements-section"
+import { DailyQuote } from "@/components/daily-quote"
 import { TodayFocus } from "@/components/today-focus"
 import { useAppStore } from "@/lib/store"
 import { Sparkles, Github, Heart } from "lucide-react"
@@ -48,7 +51,16 @@ export default function Home() {
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-16 sm:px-6 lg:px-8">
         {bootstrapped ? (
           <>
-            {activeTab === "dashboard" && <TodayFocus />}
+            {activeTab === "dashboard" && (
+              <>
+                <TodayFocus />
+                {/* Daily quote + Achievements row */}
+                <div className="mb-6 grid gap-5 lg:grid-cols-[1fr_1.4fr]">
+                  <DailyQuote />
+                  <AchievementsSectionWrapper />
+                </div>
+              </>
+            )}
             <TabNav />
 
             <AnimatePresence mode="wait">
@@ -76,11 +88,45 @@ export default function Home() {
       <CreateChallengeDialog />
       <ChallengeDetailDialog />
       <NoteComposerDialog />
+      <TemplatesDialog />
 
       {/* AI Assistant */}
       <AiAssistantPanel />
       <AiSettingsDialog />
     </div>
+  )
+}
+
+/**
+ * Achievements section with data loading. Kept separate so the page
+ * stays clean and the fetch logic is isolated.
+ */
+function AchievementsSectionWrapper() {
+  const achievements = useAppStore((s) => s.achievements)
+  const summary = useAppStore((s) => s.achievementsSummary)
+  const setAchievements = useAppStore((s) => s.setAchievements)
+  const setSummary = useAppStore((s) => s.setAchievementsSummary)
+
+  React.useEffect(() => {
+    fetch("/api/achievements")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.achievements) {
+          setAchievements(d.achievements)
+          setSummary(d.summary)
+        }
+      })
+      .catch(() => {})
+  }, [setAchievements, setSummary])
+
+  if (!achievements || !summary) {
+    return (
+      <div className="h-48 animate-pulse rounded-3xl border border-border/40 bg-card/30" />
+    )
+  }
+
+  return (
+    <AchievementsSection achievements={achievements} summary={summary} />
   )
 }
 
@@ -114,6 +160,10 @@ function BootSkeleton() {
   return (
     <div className="space-y-6 py-8">
       <div className="h-32 w-full animate-pulse rounded-3xl border border-border/40 bg-card/30" />
+      <div className="grid gap-5 lg:grid-cols-[1fr_1.4fr]">
+        <div className="h-48 animate-pulse rounded-3xl border border-border/40 bg-card/30" />
+        <div className="h-48 animate-pulse rounded-3xl border border-border/40 bg-card/30" />
+      </div>
       <div className="h-12 w-full animate-pulse rounded-full border border-border/40 bg-card/30" />
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (

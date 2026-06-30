@@ -74,6 +74,7 @@
         "zustand": "^5.0.6",
       },
       "devDependencies": {
+        "@next/swc-linux-x64-gnu": "16.1.3",
         "@tailwindcss/postcss": "^4",
         "@types/react": "^19",
         "@types/react-dom": "^19",

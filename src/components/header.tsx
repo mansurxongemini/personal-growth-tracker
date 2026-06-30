@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Plus, Sparkles, Flame, Bot } from "lucide-react"
+import { Plus, Sparkles, Flame, Bot, LayoutGrid } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import {
@@ -15,6 +15,7 @@ import { useAppStore } from "@/lib/store"
 export function Header() {
   const setCreateOpen = useAppStore((s) => s.setCreateOpen)
   const setAiPanelOpen = useAppStore((s) => s.setAiPanelOpen)
+  const setTemplatesOpen = useAppStore((s) => s.setTemplatesOpen)
   const challenges = useAppStore((s) => s.challenges)
 
   const activeCount = challenges.filter((c) => c.status === "active").length
@@ -66,6 +67,20 @@ export function Header() {
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setTemplatesOpen(true)}
+                    className="size-9 rounded-full border-border/60 bg-card/40 backdrop-blur-md hover:bg-accent"
+                    aria-label="Browse templates"
+                  >
+                    <LayoutGrid className="size-4 text-cyan-400" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Templates Library</TooltipContent>
+              </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button

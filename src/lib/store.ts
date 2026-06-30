@@ -86,6 +86,21 @@ interface AppState {
   setAiSettings: (s: AiSettings | null) => void
   aiProviders: { key: string; label: string; models: string[]; description: string; needsKey: boolean }[]
   setAiProviders: (p: AppState["aiProviders"]) => void
+
+  // Templates library
+  templatesOpen: boolean
+  setTemplatesOpen: (v: boolean) => void
+
+  // Achievements
+  achievements: import("./achievements").AchievementProgress[] | null
+  achievementsSummary: {
+    total: number
+    unlocked: number
+    rarityCounts: Record<string, number>
+    unlockedRarityCounts: Record<string, number>
+  } | null
+  setAchievements: (a: import("./achievements").AchievementProgress[]) => void
+  setAchievementsSummary: (s: AppState["achievementsSummary"]) => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -184,4 +199,12 @@ export const useAppStore = create<AppState>((set) => ({
   setAiSettings: (s) => set({ aiSettings: s }),
   aiProviders: [],
   setAiProviders: (p) => set({ aiProviders: p }),
+
+  templatesOpen: false,
+  setTemplatesOpen: (v) => set({ templatesOpen: v }),
+
+  achievements: null,
+  achievementsSummary: null,
+  setAchievements: (a) => set({ achievements: a }),
+  setAchievementsSummary: (s) => set({ achievementsSummary: s }),
 }))
