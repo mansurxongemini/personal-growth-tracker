@@ -75,6 +75,12 @@ export function AiSettingsDialog() {
     return (
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
+          <DialogHeader className="sr-only">
+            <DialogTitle>AI sozlamalari yuklanmoqda</DialogTitle>
+            <DialogDescription>
+              Sozlamalar tayyor bo'lguncha kuting.
+            </DialogDescription>
+          </DialogHeader>
           <div className="flex h-40 items-center justify-center">
             <Loader2 className="size-5 animate-spin text-muted-foreground" />
           </div>
