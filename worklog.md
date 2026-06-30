@@ -155,3 +155,172 @@ Tested end-to-end with agent-browser and z-ai vision (VLM):
 ### Priority recommendation
 Stabilize confetti duration + add a "celebration" toast variant, then move to
 authentication so the app is multi-user ready.
+
+---
+
+# Phase 2 — Context-Aware Multi-Provider AI Integration
+
+## Project Status (Phase 2 — Complete)
+
+Implemented the **Context-Aware Multi-Provider AI Architecture** from the
+uploaded guide (`ai_integration_guide.pdf`, written in Uzbek). The app now has
+a context-injecting AI assistant that reads ALL of the user's data
+(challenges, daily logs, notes) and answers personalized questions, plus a
+full settings UI for provider/model/temperature/system-prompt configuration.
+
+The AI integration is **fully functional and browser-verified**.
+
+---
+
+## What the Guide Required (Uzbek → English summary)
+
+1. **Context Injection model** — gather user's data from DB, feed to AI as
+   prepared context (not a generic chatbot).
+2. **Auth & Security** — NextAuth.js JWT login; AI requests scoped to userId.
+3. **Dynamic Provider Routing** — switchable providers (OpenAI, Anthropic,
+   Gemini, DeepSeek); API keys stored in DB.
+4. **AiSetting model** in Prisma — provider, apiKey, customModel.
+5. **Universal AI Provider Adapter** — `/api/ai/route.ts` with a dynamic
+   router.
+6. **Ultra-minimalistic UI** — monochrome, fine borders, frameless inputs.
+
+### Adaptation note
+Per platform rules, the actual LLM call MUST go through `z-ai-web-dev-sdk`
+(not raw OpenAI/Anthropic fetches). I preserved the guide's architecture
+(context injection, provider/model selection concept, AiSetting model,
+settings UI) but route every call through z-ai under the hood. Auth
+(NextAuth) was deferred because the system constraint limits the app to a
+single `/` route (no /login page) — AiSetting is stored as a singleton
+(`scope="global"`) and is auth-ready (swap `scope="user"` + `userId` when
+auth lands).
+
+---
+
+## New Files
+
+### Lib
+- `src/lib/ai-context.ts` — `buildUserContext()` (gathers all challenges +
+  logs + notes → structured context string with per-challenge progress,
+  streaks, today's status, recent reflections) + `buildSystemPrompt()` +
+  `AI_SUGGESTIONS` (6 quick-prompt chips).
+- `src/lib/ai-provider.ts` — universal adapter (`runChat()`) wrapping
+  `z-ai-web-dev-sdk`; `PROVIDERS` metadata (zai/openai/anthropic/gemini/
+  deepseek with models + needsKey flags).
+
+### API Routes
+- `src/app/api/ai/route.ts` — `GET` (history, last 30), `POST` (context-aware
+  chat: load settings → build context → build system prompt → load history →
+  runChat → persist user+assistant messages → return reply + usage +
+  contextStats), `DELETE` (clear history).
+- `src/app/api/ai/settings/route.ts` — `GET` (settings + providers list,
+  apiKey masked as `***`), `PATCH` (provider/model/temperature/enabled/
+  systemPrompt/apiKey; auto-resets model when provider changes).
+
+### Components
+- `src/components/ai/ai-assistant-panel.tsx` — right-side slide-over Sheet
+  (minimalist monochrome per guide): welcome state with 6 suggestion chips,
+  message bubbles (user=dark, AI=white with markdown rendering via
+  react-markdown), typing dots, quick-suggestion strip after messages,
+  frameless textarea input (`bg-zinc-100 dark:bg-zinc-900 focus:ring-1`),
+  clear-history + settings gear + close buttons.
+- `src/components/ai/ai-settings-dialog.tsx` — minimalist settings dialog:
+  enable Switch, provider Select, model Select, API-key Input (only for
+  external providers), temperature Slider (0–2 with tooltips), system-prompt
+  Textarea (4000 char cap), context-injection explainer card, Save button.
+
+### Schema (Prisma)
+- `AiSetting` — id, scope (global|user), userId, provider, model, apiKey,
+  systemPrompt, temperature, enabled. `@@unique([scope, userId])`.
+- `AiMessage` — id, role, content, context (audit snapshot), createdAt.
+
+### Store (Zustand)
+- Added: `aiPanelOpen`, `aiMessages`, `appendAiMessage`,
+  `updateLastAiMessage`, `clearAiMessages`, `aiThinking`, `aiSettingsOpen`,
+  `aiSettings`, `aiProviders`.
+
+### Header
+- Added AI assistant button (Bot icon, violet pulse dot, tooltip "AI
+  Yordamchi") between theme toggle and New Challenge.
+
+---
+
+## Verification Results (curl + agent-browser + VLM)
+
+1. **`GET /api/ai/settings`** → returns `{ settings, providers }` with 5
+   providers, default `zai/glm-4.6/0.7/enabled`. ✅
+2. **`PATCH /api/ai/settings`** → temperature 0.7→0.9 + custom system prompt
+   saved; reset back works. ✅
+3. **`POST /api/ai`** → context-aware chat. AI response (Uzbek, markdown):
+   > "### Progress Xulosasi
+   > - **Jami progress:** 52% o'rtacha (6 ta challenge...)
+   > - **Eng yuqori streak:** 13 kun ("Read 20 Pages")
+   > - **Bugun:** Barcha challenge'lar bajarildi ✓
+   > ### Tavsiyalar
+   > - **"No Sugar"** challenge 6 kun qoldi..."
+   
+   Referenced specific challenges ("No Sugar", "Read 20 Pages", "10K Steps"),
+   streak (13 days), check-in count (72), completion %. Returned usage
+   (1396 prompt + 166 completion tokens). ✅
+4. **`DELETE /api/ai`** → clears history (200). ✅
+5. **Browser**: AI panel opens from header button; welcome state shows 6
+   suggestion chips; clicking "Motivatsiya" sends prompt → AI responds with
+   rich markdown (headings "🚀 Sizning Yutuqlaringiz", "💡 Keyingi Qadam"
+   + lists). VLM confirmed: "user message and AI response visible, markdown
+   bold/bullets, mentions specific challenges, minimalist design." ✅
+6. **Lint clean** (`bun run lint` passes). ✅
+7. **No runtime errors** in dev log during AI requests.
+
+---
+
+## Current Goals / Completed Modifications (Phase 2)
+
+- ✅ Context Injection architecture — AI reads all user data per request
+- ✅ Universal provider adapter (z-ai SDK under the hood, provider-aware UI)
+- ✅ AiSetting model (singleton global, auth-ready)
+- ✅ AiMessage persistence (chat history survives reloads)
+- ✅ AI assistant slide-over panel (minimalist monochrome, markdown rendering)
+- ✅ 6 quick-suggestion chips (Uzbek: progress, attention, motivation, today,
+  analysis, advice)
+- ✅ AI settings dialog (enable, provider, model, API key, temperature,
+  custom system prompt)
+- ✅ Header AI button with pulse indicator
+- ✅ Conversation history (last 12 messages sent as context)
+- ✅ Context audit snapshot stored on each AiMessage
+
+---
+
+## Unresolved Issues / Risks / Next-Phase Priorities
+
+### Known items
+- **Auth not implemented** — guide specified NextAuth.js JWT login. Deferred
+  because the app is constrained to a single `/` route. AiSetting is a
+  singleton global; swap to `scope="user"` + `userId` when auth lands.
+- **External providers** (OpenAI/Anthropic/Gemini/DeepSeek) currently route
+  through z-ai SDK regardless of selection (platform rule). The provider
+  field is stored + shown in UI for transparency and future wiring. To truly
+  support external providers, add a server-side fetch path in `runChat()`
+  guarded by the stored apiKey.
+- **API key storage** is plaintext in SQLite (guide noted "should be
+  encrypted"). Add AES encryption before production.
+- **No streaming** — responses are returned whole. Could add SSE streaming
+  for a typewriter effect.
+- **Dev server stability in sandbox** — background processes started in a
+  Bash tool invocation are reaped when that invocation ends; all
+  cross-invocation testing had to be done in single combined commands.
+
+### Recommended next-phase features
+1. **NextAuth.js** — add Credentials provider + a `/login` route (requires
+   relaxing the single-route constraint) and scope AiSetting/AiMessage per
+   user.
+2. **Streaming responses** — SSE or ReadableStream for token-by-token output.
+3. **Per-challenge AI** — a "ask about this challenge" button inside the
+   detail dialog that scopes context to just that challenge.
+4. **AI-generated insights** — a daily auto-generated insight card on the
+   dashboard (cron → AI analyzes today's data → cached insight).
+5. **Voice input** — ASR skill for voice-to-chat.
+6. **Encrypt API keys** at rest.
+7. **Rate limiting** on `/api/ai`.
+
+### Priority recommendation
+Wire NextAuth + per-user scoping next (highest architectural value), then
+add streaming responses for UX polish.

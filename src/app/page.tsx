@@ -10,6 +10,8 @@ import { NotesTab } from "@/components/notes-tab"
 import { CreateChallengeDialog } from "@/components/create-challenge-dialog"
 import { ChallengeDetailDialog } from "@/components/challenge-detail-dialog"
 import { NoteComposerDialog } from "@/components/note-composer-dialog"
+import { AiAssistantPanel } from "@/components/ai/ai-assistant-panel"
+import { AiSettingsDialog } from "@/components/ai/ai-settings-dialog"
 import { TodayFocus } from "@/components/today-focus"
 import { useAppStore } from "@/lib/store"
 import { Sparkles, Github, Heart } from "lucide-react"
@@ -74,6 +76,10 @@ export default function Home() {
       <CreateChallengeDialog />
       <ChallengeDetailDialog />
       <NoteComposerDialog />
+
+      {/* AI Assistant */}
+      <AiAssistantPanel />
+      <AiSettingsDialog />
     </div>
   )
 }

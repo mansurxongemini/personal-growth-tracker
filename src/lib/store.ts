@@ -6,6 +6,25 @@ import type { ChallengeWithStats, NoteEntry } from "./types"
 export type DashboardFilter = "all" | "active" | "completed" | "failed"
 export type TabKey = "dashboard" | "analytics" | "notes"
 
+export interface AiMessage {
+  id?: string
+  role: "user" | "assistant"
+  content: string
+  createdAt?: string
+  pending?: boolean
+  error?: boolean
+}
+
+export interface AiSettings {
+  provider: string
+  model: string
+  hasApiKey: boolean
+  systemPrompt: string
+  temperature: number
+  enabled: boolean
+  updatedAt?: string
+}
+
 interface AppState {
   // navigation
   activeTab: TabKey
@@ -50,6 +69,23 @@ interface AppState {
   // loading flags
   loading: boolean
   setLoading: (v: boolean) => void
+
+  // ---- AI Assistant ----
+  aiPanelOpen: boolean
+  setAiPanelOpen: (v: boolean) => void
+  aiMessages: AiMessage[]
+  setAiMessages: (m: AiMessage[]) => void
+  appendAiMessage: (m: AiMessage) => void
+  updateLastAiMessage: (patch: Partial<AiMessage>) => void
+  clearAiMessages: () => void
+  aiThinking: boolean
+  setAiThinking: (v: boolean) => void
+  aiSettingsOpen: boolean
+  setAiSettingsOpen: (v: boolean) => void
+  aiSettings: AiSettings | null
+  setAiSettings: (s: AiSettings | null) => void
+  aiProviders: { key: string; label: string; models: string[]; description: string; needsKey: boolean }[]
+  setAiProviders: (p: AppState["aiProviders"]) => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -124,4 +160,28 @@ export const useAppStore = create<AppState>((set) => ({
 
   loading: false,
   setLoading: (v) => set({ loading: v }),
+
+  // ---- AI Assistant ----
+  aiPanelOpen: false,
+  setAiPanelOpen: (v) => set({ aiPanelOpen: v }),
+  aiMessages: [],
+  setAiMessages: (m) => set({ aiMessages: m }),
+  appendAiMessage: (m) =>
+    set((s) => ({ aiMessages: [...s.aiMessages, m] })),
+  updateLastAiMessage: (patch) =>
+    set((s) => {
+      if (s.aiMessages.length === 0) return s
+      const next = [...s.aiMessages]
+      next[next.length - 1] = { ...next[next.length - 1], ...patch }
+      return { aiMessages: next }
+    }),
+  clearAiMessages: () => set({ aiMessages: [] }),
+  aiThinking: false,
+  setAiThinking: (v) => set({ aiThinking: v }),
+  aiSettingsOpen: false,
+  setAiSettingsOpen: (v) => set({ aiSettingsOpen: v }),
+  aiSettings: null,
+  setAiSettings: (s) => set({ aiSettings: s }),
+  aiProviders: [],
+  setAiProviders: (p) => set({ aiProviders: p }),
 }))

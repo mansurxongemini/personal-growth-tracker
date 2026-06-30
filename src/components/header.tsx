@@ -1,13 +1,20 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Plus, Sparkles, Flame } from "lucide-react"
+import { Plus, Sparkles, Flame, Bot } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { useAppStore } from "@/lib/store"
 
 export function Header() {
   const setCreateOpen = useAppStore((s) => s.setCreateOpen)
+  const setAiPanelOpen = useAppStore((s) => s.setAiPanelOpen)
   const challenges = useAppStore((s) => s.challenges)
 
   const activeCount = challenges.filter((c) => c.status === "active").length
@@ -58,6 +65,23 @@ export function Header() {
           {/* Actions */}
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setAiPanelOpen(true)}
+                    className="relative size-9 rounded-full border-border/60 bg-card/40 backdrop-blur-md hover:bg-accent"
+                    aria-label="Open AI assistant"
+                  >
+                    <Bot className="size-4 text-violet-400" />
+                    <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-violet-500 ring-2 ring-background heat-pulse" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>AI Yordamchi</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <Button
               onClick={() => setCreateOpen(true)}
               className="group relative overflow-hidden rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 transition-all hover:shadow-emerald-500/40 hover:brightness-110"

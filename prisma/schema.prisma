@@ -53,3 +53,34 @@ model Note {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
+
+/// AI integration settings (context-aware multi-provider architecture).
+/// Stored as a singleton (scope = "global") so the app works without auth.
+/// When NextAuth is wired in, scope="user" + userId can scope per-user.
+model AiSetting {
+  id           String   @id @default(cuid())
+  scope        String   @default("global") // global | user
+  userId       String?  // null for global scope
+  provider     String   @default("zai") // zai (in-house) | openai | anthropic | gemini | deepseek
+  model        String   @default("glm-4.6") // e.g. glm-4.6, gpt-4o, claude-3-5-sonnet, deepseek-chat
+  apiKey       String?  // user-supplied key (for external providers); null = use platform default
+  systemPrompt String   @default("") // optional override; empty = use built-in assistant prompt
+  temperature  Float    @default(0.7)
+  enabled      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([scope, userId])
+}
+
+/// Persisted AI conversation messages so chat history survives reloads.
+model AiMessage {
+  id        String   @id @default(cuid())
+  role      String // user | assistant | system
+  content   String
+  context   String  @default("") // snapshot of injected context (for debugging/audit)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
