@@ -1,0 +1,55 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Challenge {
+  id          String    @id @default(cuid())
+  title       String
+  description String    @default("")
+  category    String    @default("Mind") // Health | Mind | Career | Finance | Social | Creativity | Fitness
+  duration    Int       @default(21) // total days
+  dailyTarget String    @default("") // e.g. "Read 20 pages", "Run 5km"
+  color       String    @default("emerald") // accent color key
+  icon        String    @default("Target")
+  startDate   DateTime  @default(now())
+  status      String    @default("active") // active | completed | failed | paused
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  logs        DailyLog[]
+  notes       Note[]
+}
+
+model DailyLog {
+  id          String    @id @default(cuid())
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  date        DateTime  // the calendar day this log belongs to (normalized to midnight)
+  dayNumber   Int       // 1-based day index within the challenge
+  completed   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([challengeId, date])
+  @@index([challengeId])
+}
+
+model Note {
+  id          String    @id @default(cuid())
+  challengeId String?
+  challenge   Challenge? @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  dailyLogId  String?
+  title       String    @default("")
+  content     String    @default("")
+  mood        String    @default("neutral") // great | good | neutral | tough | bad
+  date        DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
