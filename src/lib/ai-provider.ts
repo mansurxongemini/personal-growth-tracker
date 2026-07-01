@@ -132,3 +132,67 @@ export const PROVIDERS: {
 export function getProvider(key: string) {
   return PROVIDERS.find((p) => p.key === key) ?? PROVIDERS[0]
 }
+
+/** Get custom models from database */
+export async function getCustomModels(): Promise<string[]> {
+  try {
+    const { db } = await import("@/lib/db")
+    const settings = await db.aiSetting.findUnique({
+      where: { scope_userId: { scope: "global", userId: "" } },
+    })
+    if (settings?.customModels) {
+      return JSON.parse(settings.customModels)
+    }
+  } catch {
+    // ignore errors
+  }
+  return []
+}
+
+/** Add a custom model to the list */
+export async function addCustomModel(modelName: string): Promise<string[]> {
+  try {
+    const { db } = await import("@/lib/db")
+    const settings = await db.aiSetting.findUnique({
+      where: { scope_userId: { scope: "global", userId: "" } },
+    })
+    let customModels: string[] = []
+    if (settings?.customModels) {
+      customModels = JSON.parse(settings.customModels)
+    }
+    if (!customModels.includes(modelName)) {
+      customModels.push(modelName)
+      await db.aiSetting.update({
+        where: { id: settings!.id },
+        data: { customModels: JSON.stringify(customModels) },
+      })
+    }
+    return customModels
+  } catch {
+    // ignore errors
+  }
+  return []
+}
+
+/** Remove a custom model from the list */
+export async function removeCustomModel(modelName: string): Promise<string[]> {
+  try {
+    const { db } = await import("@/lib/db")
+    const settings = await db.aiSetting.findUnique({
+      where: { scope_userId: { scope: "global", userId: "" } },
+    })
+    let customModels: string[] = []
+    if (settings?.customModels) {
+      customModels = JSON.parse(settings.customModels)
+    }
+    customModels = customModels.filter((m) => m !== modelName)
+    await db.aiSetting.update({
+      where: { id: settings!.id },
+      data: { customModels: JSON.stringify(customModels) },
+    })
+    return customModels
+  } catch {
+    // ignore errors
+  }
+  return []
+}

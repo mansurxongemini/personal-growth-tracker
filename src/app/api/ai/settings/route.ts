@@ -16,6 +16,25 @@ async function getOrCreateSettings() {
 
 export async function GET() {
   const s = await getOrCreateSettings()
+  // Parse custom models from database
+  let customModels: string[] = []
+  if (s.customModels) {
+    try {
+      customModels = JSON.parse(s.customModels)
+    } catch {
+      customModels = []
+    }
+  }
+  // Add custom models to zai provider's model list
+  const providersWithCustom = PROVIDERS.map((p) => {
+    if (p.key === "zai") {
+      return {
+        ...p,
+        models: [...p.models, ...customModels],
+      }
+    }
+    return p
+  })
   return NextResponse.json({
     settings: {
       id: s.id,
@@ -28,7 +47,7 @@ export async function GET() {
       enabled: s.enabled,
       updatedAt: s.updatedAt.toISOString(),
     },
-    providers: PROVIDERS,
+    providers: providersWithCustom,
   })
 }
 
@@ -38,7 +57,22 @@ export async function PATCH(req: NextRequest) {
 
   const data: Record<string, unknown> = {}
   if (typeof body.provider === "string") {
-    const provider = PROVIDERS.find((p) => p.key === body.provider)
+    // Get providers with custom models included
+    let customModels: string[] = []
+    if (s.customModels) {
+      try {
+        customModels = JSON.parse(s.customModels)
+      } catch {
+        customModels = []
+      }
+    }
+    const providersWithCustom = PROVIDERS.map((p) => {
+      if (p.key === "zai") {
+        return { ...p, models: [...p.models, ...customModels] }
+      }
+      return p
+    })
+    const provider = providersWithCustom.find((p) => p.key === body.provider)
     if (provider) {
       data.provider = body.provider
       // if switching provider and current model isn't in the new provider's list, reset

@@ -67,6 +67,8 @@ model AiSetting {
   systemPrompt String   @default("") // optional override; empty = use built-in assistant prompt
   temperature  Float    @default(0.7)
   enabled      Boolean  @default(true)
+  /// JSON array of custom model names added by user (e.g. ["my-custom-model", "another-model"])
+  customModels String   @default("[]")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
