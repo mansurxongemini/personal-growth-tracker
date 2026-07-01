@@ -28,7 +28,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Loader2, Settings2, Info, Check, KeyRound } from "lucide-react"
+import { Loader2, Settings2, Info, Check, KeyRound, Plus, X } from "lucide-react"
 import { useAppStore, type AiSettings } from "@/lib/store"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -51,6 +51,8 @@ export function AiSettingsDialog() {
   const [form, setForm] = React.useState<AiSettings | null>(null)
   const [apiKeyInput, setApiKeyInput] = React.useState("")
   const [saving, setSaving] = React.useState(false)
+  const [customModelInput, setCustomModelInput] = React.useState("")
+  const [customModels, setCustomModels] = React.useState<string[]>([])
 
   // Load settings on open
   React.useEffect(() => {
@@ -65,6 +67,14 @@ export function AiSettingsDialog() {
           }
           if (d.providers) {
             useAppStore.getState().setAiProviders(d.providers)
+          }
+          // Extract custom models from zai provider
+          const zaiProvider = d.providers.find((p: any) => p.key === "zai")
+          if (zaiProvider) {
+            const staticModels = ["glm-4.6", "glm-4.5", "glm-4.5-air", "glm-4-plus"]
+            const allModels = zaiProvider.models || []
+            const custom = allModels.filter((m: string) => !staticModels.includes(m))
+            setCustomModels(custom)
           }
         })
         .catch(() => toast.error("Sozlamalarni yuklab bo'lmadi"))
